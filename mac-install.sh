@@ -24,18 +24,13 @@ add_vscode() {
 
 config_zsh() {
   chsh -s /bin/zsh
-  # Install Powerlevel9k https://github.com/Powerlevel9k/powerlevel9k/wiki/Install-Instructions
-  brew tap sambadevi/powerlevel9k
-  brew install powerlevel9k
-  echo "source /usr/local/opt/powerlevel9k/powerlevel9k.zsh-theme" >> ~/.zshrc
-  # Install nerd-font https://github.com/ryanoasis/nerd-fonts
-  brew tap homebrew/cask-fonts
-  brew cask install font-hack-nerd-font  
-  echo "POWERLEVEL9K_MODE='nerdfont-complete'" >> ~/.zshrc
+  brew install romkatv/powerlevel10k/powerlevel10k
+  echo 'source /usr/local/opt/powerlevel10k/powerlevel10k.zsh-theme' >>! ~/.zshrc
+
   # Install zsh as default shell for code https://medium.com/fbdevclagos/updating-visual-studio-code-default-terminal-shell-from-bash-to-zsh-711c40d6f8dc
   echo " Add to ~/Library/Application\ Support/Code/User/settings.json the following"
   echo '  "terminal.integrated.shell.osx": "/bin/zsh" '
-
+  p10k configure
 }
 
 install_formulaes() {
@@ -62,7 +57,7 @@ setup_git_keys() {
   printf "#Personal GitHub account\n Host github.com\n  HostName github.com\n  User git\n  AddKeysToAgent yes\n  UseKeychain yes\n  IdentityFile ~/.ssh/rjain_git" >> ~/.ssh/config
 }
 
-setup_git_cli { 
+setup_git_cli() { 
   echo "Best Cli from Github: https://github.com/cli/cli"
   brew install github/gh/gh
 
@@ -183,7 +178,7 @@ main() {
   #  install_formulaes
   #  setup_nvm
   #  add_vscode
-  # config_zsh
+  config_zsh
   #  setup_git_keys
   #  setup_aws_cli
   #  uninstall_aws_cli
