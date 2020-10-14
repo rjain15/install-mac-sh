@@ -30,4 +30,5 @@ python
 gdbm			
 nvm			
 readline
+gh
 

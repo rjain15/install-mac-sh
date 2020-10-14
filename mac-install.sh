@@ -25,7 +25,7 @@ add_vscode() {
 config_zsh() {
   chsh -s /bin/zsh
   brew install romkatv/powerlevel10k/powerlevel10k
-  echo 'source /usr/local/opt/powerlevel10k/powerlevel10k.zsh-theme' >>! ~/.zshrc
+  echo 'source /usr/local/opt/powerlevel10k/powerlevel10k.zsh-theme' >> ~/.zshrc
 
   # Install zsh as default shell for code https://medium.com/fbdevclagos/updating-visual-studio-code-default-terminal-shell-from-bash-to-zsh-711c40d6f8dc
   echo " Add to ~/Library/Application\ Support/Code/User/settings.json the following"
