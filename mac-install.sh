@@ -4,6 +4,7 @@
 install_brew() { 
  /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
  brew update                           # Fetch latest version of homebrew and formula.
+ brew install cask
  brew cleanup
 }
 
@@ -17,8 +18,7 @@ add_taps() {
 add_vscode() {
  brew update                           # Fetch latest version of homebrew and formula.
  brew search visual-studio-code        # Searches all known Casks for a partial or exact match.
- brew cask info visual-studio-code     # Displays information about the given Cask
- brew cask install visual-studio-code  # Install the given cask.
+ brew install --cask visual-studio-code  # Install the given cask.
  brew cleanup
 }
 
@@ -162,7 +162,7 @@ setup_pks() {
 }
 
 setup_anaconda() {
-  brew cask install anaconda
+  brew install --cask anaconda
   echo 'export PATH="/usr/local/anaconda3/bin:$PATH"' >> ~/.zshrc
   brew install spatialindex
   conda install geopandas, descartes, rtree 
@@ -174,18 +174,18 @@ setup_anaconda() {
 main() {
    echo "Installing all mac utils"
   #  install_brew
-  #  add_taps
-  #  install_formulaes
-  #  setup_nvm
-  #  add_vscode
+    add_taps
+    install_formulaes
+    setup_nvm
+    add_vscode
   config_zsh
-  #  setup_git_keys
-  #  setup_aws_cli
+    setup_git_keys
+    setup_aws_cli
   #  uninstall_aws_cli
-  # install_gcp_cli
-  # setup_gcp_cli
-  # setup_k8s
-  # setup_anaconda
+   install_gcp_cli
+   setup_gcp_cli
+   setup_k8s
+   setup_anaconda
 }
 
 main
