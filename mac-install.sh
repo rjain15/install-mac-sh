@@ -2,7 +2,9 @@
 
 
 install_brew() { 
- /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+ # /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+ /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
  brew update                           # Fetch latest version of homebrew and formula.
  brew install cask
  brew cleanup
@@ -13,6 +15,10 @@ add_taps() {
  brew tap weaveworks/tap
  brew tap
   
+}
+
+add_cocoapods() {
+
 }
 
 add_vscode() {
@@ -74,7 +80,7 @@ setup_nvm () {
   echo '[ -s "/usr/local/opt/nvm/etc/bash_completion.d/nvm" ] && . "/usr/local/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion' >> ~/.zshrc  
   source ~/.zshrc
 
-  nvm install v13.12.0 
+  nvm install latest
   nvm use default
 
 }
@@ -123,42 +129,10 @@ setup_k8s() {
 
 
 
-setup_aporeto_cli() {
-  brew install jq
-  brew tap mike-engel/jwt-cli
-  brew install jwt-cli
-
-  sudo curl -o /usr/local/bin/apoctl \
-    https://download.aporeto.com/releases/release-3.12.13/apoctl/darwin/apoctl && \
-  sudo chmod 755 /usr/local/bin/apoctl
-  eval $(apoctl auth google -e) 
-  apoctl auth verify  
-  
-
-}
-
-setup_twistlock_gcloud() {
-  ssh-keygen  -t rsa -f ~/.ssh/gcloud_rsa
-  gcloud compute os-login ssh-keys add --key-file ~/.ssh/gcloud_rsa.pub
-  gcloud compute --project "cto-demos-245420" ssh --zone "us-central1-a" central-demo-build --ssh-key-file=~/.ssh/gcloud_rsa
-  gcloud compute --project "cto-demos-245420" scp /Users/rajain/code/twistlock.lic rajain_paloaltonetworks_com@central-demo-build:/home/rajain_paloaltonetworks_com/.  --ssh-key-file=~/.ssh/gcloud_rsa
-}
-
-
-setup_twist_cli() {
-  echo "Configure Twistlock cli, make sure you have downloaded the twistcli from the console"
-
-}
-
 setup_rvm() {
   \curl -sSL https://get.rvm.io | bash -s stable
-  source /Users/rajain/.rvm/scripts/rvm 
+  source /Users/rajesh/.rvm/scripts/rvm 
   rvm install 2.6 
-}
-
-setup_pks() {
-  gem install cf-uaac
-
 }
 
 setup_anaconda() {
@@ -173,18 +147,18 @@ setup_anaconda() {
 }
 main() {
    echo "Installing all mac utils"
-  #  install_brew
+    # install_brew
+    config_zsh
+
     add_taps
     install_formulaes
     setup_nvm
     add_vscode
-  config_zsh
     setup_git_keys
     setup_aws_cli
-  #  uninstall_aws_cli
+  # uninstall_aws_cli
    install_gcp_cli
    setup_gcp_cli
-   setup_k8s
    setup_anaconda
 }
 

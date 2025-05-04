@@ -1,7 +1,6 @@
 autoconf		
+cocoapods
 gettext			
-kubernetes-helm		
-oniguruma		
 sqlite
 automake		
 git			
@@ -9,7 +8,6 @@ libgpg-error
 openssl@1.1		
 watch
 aws-iam-authenticator	
-go			
 libksba			
 pcre2			
 xz
@@ -31,4 +29,5 @@ gdbm
 nvm			
 readline
 gh
+supabase/tap/supabase
 
