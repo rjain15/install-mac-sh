@@ -19,11 +19,39 @@ brew "tree"
 brew "watch"
 brew "direnv"
 
+
+# --- Shell / productivity ---
+brew "fzf"
+brew "ripgrep"
+brew "fd"
+brew "bat"
+brew "direnv"
+
+# --- Build toolchain (safe baseline) ---
+brew "autoconf"
+brew "automake"
+brew "libtool"
+brew "pkg-config"
+
+
+# --- Node toolchain (choose one lane) ---
+brew "nvm"
+brew "corepack"   # prefer over brew yarn; enables yarn/pnpm per-project :contentReference[oaicite:6]{index=6}
+
+# --- Cloud ---
+brew "awscli"
+# brew "azure-cli"   # uncomment if you use Azure often
+
+# --- Apps ---
+cask "visual-studio-code"
+cask "cursor"
+cask "docker-desktop"   # :contentReference[oaicite:8]{index=8}
+cask "postman"          # :contentReference[oaicite:9]{index=9}
+
+
 # --- Dev toolchain ---
 brew "python"      # includes pip
 brew "pipx"        # clean Python CLI installs (recommended)
-brew "node"        # OPTIONAL: if you prefer brew-managed node instead of nvm
-brew "nvm"         # recommended if you want multiple node versions
 
 # --- Cloud CLIs ---
 brew "awscli"
