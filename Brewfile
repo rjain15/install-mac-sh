@@ -1,4 +1,5 @@
-tap "homebrew/bundle"
+# Brewfile (modern)
+# Homebrew Bundle is built-in; do NOT tap homebrew/bundle.
 
 # --- Core CLI ---
 brew "git"
