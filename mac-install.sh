@@ -1,192 +1,196 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
+# -----------------------------------------------------------------------------
+# Mac Bootstrap: Homebrew + Brewfile + shell + git ssh + node (nvm) + CLIs
+# -----------------------------------------------------------------------------
 
-install_brew() { 
- /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
- brew update                           # Fetch latest version of homebrew and formula.
- brew install cask
- brew cleanup
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BREWFILE_PATH="${BREWFILE_PATH:-$ROOT_DIR/Brewfile}"
+ZSHRC="${HOME}/.zshrc"
+
+log()  { printf "\n\033[1;34m==>\033[0m %s\n" "$*"; }
+warn() { printf "\n\033[1;33m[warn]\033[0m %s\n" "$*"; }
+die()  { printf "\n\033[1;31m[err]\033[0m %s\n" "$*"; exit 1; }
+
+require_macos() {
+  [[ "$(uname -s)" == "Darwin" ]] || die "This script is for macOS only."
 }
 
-add_taps() {
- echo "Add Taps"
- brew tap weaveworks/tap
- brew tap
-  
-}
-
-add_vscode() {
- brew update                           # Fetch latest version of homebrew and formula.
- brew search visual-studio-code        # Searches all known Casks for a partial or exact match.
- brew install --cask visual-studio-code  # Install the given cask.
- brew cleanup
-}
-
-config_zsh() {
-  chsh -s /bin/zsh
-  brew install romkatv/powerlevel10k/powerlevel10k
-  echo 'source /usr/local/opt/powerlevel10k/powerlevel10k.zsh-theme' >> ~/.zshrc
-
-  # Install zsh as default shell for code https://medium.com/fbdevclagos/updating-visual-studio-code-default-terminal-shell-from-bash-to-zsh-711c40d6f8dc
-  echo " Add to ~/Library/Application\ Support/Code/User/settings.json the following"
-  echo '  "terminal.integrated.shell.osx": "/bin/zsh" '
-  p10k configure
-}
-
-install_formulaes() {
- echo "Upgrade Formulaes"
-
-#  for f in $(cat brew.txt); 
-#  do 
-#     echo $f; 
-#     brew install $f
-#  done
- brew install $(cat brew.txt)
-}
-
-upgrade_formulaes() {
- echo "Upgrade Formulaes"
- brew upgrade $(cat brew.txt)
-}
-
-setup_git_keys() {
-  ssh-keygen -t rsa -b 4096 -C "rjain15@gmail.com" -f ~/.ssh/rjain_git
-  cat ~/.ssh/rjain_git.pub | pbcopy
-  echo "Paste this key in Git Account"  
-  read -p "Press enter to continue"
-  printf "#Personal GitHub account\n Host github.com\n  HostName github.com\n  User git\n  AddKeysToAgent yes\n  UseKeychain yes\n  IdentityFile ~/.ssh/rjain_git" >> ~/.ssh/config
-}
-
-setup_git_cli() { 
-  echo "Best Cli from Github: https://github.com/cli/cli"
-  brew install github/gh/gh
-
-}
-
-setup_nvm () {
-
-  brew install nvm yarn 
-  if [ -f "~/.nvm" ]; then
-    mkdir ~/.nvm
+install_xcode_cli_tools() {
+  # Many brew installs require Command Line Tools.
+  if ! xcode-select -p >/dev/null 2>&1; then
+    log "Installing Xcode Command Line Tools..."
+    xcode-select --install || true
+    warn "If a GUI prompt appeared, complete it, then re-run this script."
+  else
+    log "Xcode Command Line Tools already installed."
   fi
-  echo 'export NVM_DIR="$HOME/.nvm"' >> ~/.zshrc  
-  echo '[ -s "/usr/local/opt/nvm/nvm.sh" ] && . "/usr/local/opt/nvm/nvm.sh"  # This loads nvm' >>  ~/.zshrc  
-  echo '[ -s "/usr/local/opt/nvm/etc/bash_completion.d/nvm" ] && . "/usr/local/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion' >> ~/.zshrc  
-  source ~/.zshrc
-
-  nvm install v13.12.0 
-  nvm use default
-
 }
 
-setup_aws_cli() {
-  curl "https://d1vvhvl2y92vvt.cloudfront.net/AWSCLIV2.pkg" -o "/tmp/AWSCLIV2.pkg"
-  sudo installer -pkg /tmp/AWSCLIV2.pkg -target /
-  ln -s /usr/local/aws-cli/aws2 /usr/local/bin/aws  
+install_homebrew() {
+  if command -v brew >/dev/null 2>&1; then
+    log "Homebrew already installed."
+    return
+  fi
+
+  log "Installing Homebrew..."
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+  # Ensure brew is in PATH for this session + future shells
+  if [[ -x /opt/homebrew/bin/brew ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [[ -x /usr/local/bin/brew ]]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+  else
+    die "Brew installed but not found in expected locations."
+  fi
 }
 
-uninstall_aws_cli() {
-  sudo rm /usr/local/bin/aws
-  sudo rm /usr/local/bin/aws2_completer
-  sudo rm -rf /usr/local/aws-cli
-  sudo rm /usr/local/bin/aws2
-  sudo rm /usr/local/bin/aws-iam-authenticator
-  sudo rm -rf /usr/local/aws-cli
+ensure_brew_shellenv_in_zshrc() {
+  log "Ensuring Homebrew shellenv is loaded in ~/.zshrc..."
 
+  # Per Homebrew docs: eval "$(brew shellenv)" after ensuring PATH includes brew locations. :contentReference[oaicite:6]{index=6}
+  local marker="# >>> homebrew shellenv >>>"
+  if ! grep -qF "$marker" "$ZSHRC" 2>/dev/null; then
+    cat >> "$ZSHRC" <<'EOF'
+
+# >>> homebrew shellenv >>>
+command -v brew >/dev/null 2>&1 || export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+command -v brew >/dev/null 2>&1 && eval "$(brew shellenv)"
+# <<< homebrew shellenv <<<
+EOF
+  fi
+
+  # Load it now so the rest of the script can run in this session
+  # shellcheck disable=SC1090
+  source "$ZSHRC" || true
 }
 
-setup_azure_cli() {
-  echo "Azure cli"
-  brew update && brew install azure-cli
-  az login
+brew_bundle_install() {
+  [[ -f "$BREWFILE_PATH" ]] || die "Brewfile not found at: $BREWFILE_PATH"
+
+  log "Updating Homebrew..."
+  brew update
+
+  log "Installing from Brewfile with brew bundle..."
+  # Brew Bundle docs: declarative installs via Brewfile. :contentReference[oaicite:7]{index=7}
+  brew bundle --file "$BREWFILE_PATH"
+
+  log "Cleaning up Homebrew..."
+  brew cleanup
 }
 
-install_gcp_cli() {
-  \curl https://sdk.cloud.google.com | bash 
+setup_git_ssh_key() {
+  # Creates a GitHub key you can add to GitHub.
+  # Uses ed25519 (modern default) and macOS keychain integration.
+  local key_path="${HOME}/.ssh/id_ed25519_github"
+  local email="${GIT_EMAIL:-rjain15@gmail.com}"
 
-  source ~/.zshrc
+  mkdir -p "${HOME}/.ssh"
+  chmod 700 "${HOME}/.ssh"
+
+  if [[ -f "$key_path" ]]; then
+    log "SSH key already exists: $key_path"
+  else
+    log "Creating SSH key (ed25519) for GitHub..."
+    ssh-keygen -t ed25519 -C "$email" -f "$key_path" -N ""
+  fi
+
+  # Add to ssh-agent + keychain
+  eval "$(ssh-agent -s)" >/dev/null 2>&1 || true
+  ssh-add --apple-use-keychain "$key_path" >/dev/null 2>&1 || ssh-add "$key_path" || true
+
+  # Ensure SSH config entry
+  local ssh_config="${HOME}/.ssh/config"
+  touch "$ssh_config"
+  chmod 600 "$ssh_config"
+
+  if ! grep -q "Host github.com" "$ssh_config"; then
+    log "Adding GitHub SSH config to ~/.ssh/config..."
+    cat >> "$ssh_config" <<EOF
+
+# --- GitHub (personal) ---
+Host github.com
+  HostName github.com
+  User git
+  AddKeysToAgent yes
+  UseKeychain yes
+  IdentityFile ${key_path}
+EOF
+  fi
+
+  log "Copying public key to clipboard..."
+  pbcopy < "${key_path}.pub"
+  echo "✅ Public key copied. Paste it into GitHub > Settings > SSH and GPG keys."
 }
 
-setup_gcp_cli() {
-  gcloud init
-  gcloud config list
-  gcloud info
-  gcloud config set accessibility/screen_reader true
+setup_nvm_and_node() {
+  # Install nvm via brew (from Brewfile) and configure zsh.
+  # Homebrew formula exists. :contentReference[oaicite:8]{index=8}
+  log "Configuring nvm in ~/.zshrc..."
 
+  local marker="# >>> nvm >>>"
+  if ! grep -qF "$marker" "$ZSHRC" 2>/dev/null; then
+    cat >> "$ZSHRC" <<'EOF'
+
+# >>> nvm >>>
+export NVM_DIR="$HOME/.nvm"
+mkdir -p "$NVM_DIR"
+# Homebrew installs nvm here:
+[ -s "$(brew --prefix nvm)/nvm.sh" ] && \. "$(brew --prefix nvm)/nvm.sh"
+[ -s "$(brew --prefix nvm)/etc/bash_completion.d/nvm" ] && \. "$(brew --prefix nvm)/etc/bash_completion.d/nvm"
+# <<< nvm <<<
+EOF
+  fi
+
+  # Load nvm now
+  # shellcheck disable=SC1090
+  source "$ZSHRC" || true
+
+  if command -v nvm >/dev/null 2>&1; then
+    log "Installing latest Node LTS via nvm..."
+    nvm install --lts
+    nvm alias default 'lts/*'
+    nvm use default
+    log "Node: $(node -v) | npm: $(npm -v)"
+  else
+    warn "nvm not found in PATH yet. Open a new terminal and run: nvm install --lts"
+  fi
 }
 
+install_global_npm_tools() {
+  # Only installs after Node is available
+  if ! command -v npm >/dev/null 2>&1; then
+    warn "npm not found yet; skipping global npm tools (vercel)."
+    return
+  fi
 
-
-setup_k8s() {
- gcloud components install kubectl beta
+  log "Installing global npm tools..."
+  npm install -g vercel
 }
 
-
-
-setup_aporeto_cli() {
-  brew install jq
-  brew tap mike-engel/jwt-cli
-  brew install jwt-cli
-
-  sudo curl -o /usr/local/bin/apoctl \
-    https://download.aporeto.com/releases/release-3.12.13/apoctl/darwin/apoctl && \
-  sudo chmod 755 /usr/local/bin/apoctl
-  eval $(apoctl auth google -e) 
-  apoctl auth verify  
-  
-
+post_install_notes() {
+  log "Post-install notes:"
+  echo "• VS Code: run 'Shell Command: Install \"code\" command in PATH' from the Command Palette if needed."
+  echo "• Cursor: app is installed; CLI availability varies by version. If you want 'cursor' in PATH, check Cursor settings."
+  echo "• AWS CLI installed via brew (awscli). :contentReference[oaicite:9]{index=9}"
+  echo "• Brew Bundle manages installs declaratively via Brewfile. :contentReference[oaicite:10]{index=10}"
 }
 
-setup_twistlock_gcloud() {
-  ssh-keygen  -t rsa -f ~/.ssh/gcloud_rsa
-  gcloud compute os-login ssh-keys add --key-file ~/.ssh/gcloud_rsa.pub
-  gcloud compute --project "cto-demos-245420" ssh --zone "us-central1-a" central-demo-build --ssh-key-file=~/.ssh/gcloud_rsa
-  gcloud compute --project "cto-demos-245420" scp /Users/rajain/code/twistlock.lic rajain_paloaltonetworks_com@central-demo-build:/home/rajain_paloaltonetworks_com/.  --ssh-key-file=~/.ssh/gcloud_rsa
-}
-
-
-setup_twist_cli() {
-  echo "Configure Twistlock cli, make sure you have downloaded the twistcli from the console"
-
-}
-
-setup_rvm() {
-  \curl -sSL https://get.rvm.io | bash -s stable
-  source /Users/rajain/.rvm/scripts/rvm 
-  rvm install 2.6 
-}
-
-setup_pks() {
-  gem install cf-uaac
-
-}
-
-setup_anaconda() {
-  brew install --cask anaconda
-  echo 'export PATH="/usr/local/anaconda3/bin:$PATH"' >> ~/.zshrc
-  brew install spatialindex
-  conda install geopandas, descartes, rtree 
-  pip install folium
-  pip install pysal
-  
-
-}
 main() {
-   echo "Installing all mac utils"
-  #  install_brew
-    add_taps
-    install_formulaes
-    setup_nvm
-    add_vscode
-  config_zsh
-    setup_git_keys
-    setup_aws_cli
-  #  uninstall_aws_cli
-   install_gcp_cli
-   setup_gcp_cli
-   setup_k8s
-   setup_anaconda
+  require_macos
+  install_xcode_cli_tools
+  install_homebrew
+  ensure_brew_shellenv_in_zshrc
+  brew_bundle_install
+  setup_git_ssh_key
+  setup_nvm_and_node
+  install_global_npm_tools
+  post_install_notes
+
+  log "Done ✅"
+  echo "Restart your terminal (or 'source ~/.zshrc') to ensure everything is active."
 }
 
-main
-
+main "$@"
